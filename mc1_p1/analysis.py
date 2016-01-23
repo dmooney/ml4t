@@ -22,18 +22,28 @@ def assess_portfolio(sd = dt.datetime(2008,1,1), ed = dt.datetime(2009,1,1), \
     prices_SPY = prices_all['SPY']  # only SPY, for comparison later
 
     # Get daily portfolio value
-    port_val = prices_SPY # add code here to compute daily portfolio values
+    normed = prices/prices.ix[0]
+    alloced = normed * allocs
+    pos_vals = alloced * sv
+    port_val = pos_vals.sum(axis=1)
 
     # Get portfolio statistics (note: std_daily_ret = volatility)
-    cr, adr, sddr, sr = [0.25, 0.001, 0.0005, 2.1] # add code here to compute stats
+    dr = port_val.copy()
+    dr[1:] = (port_val[1:] / port_val[:-1].values) - 1
+    dr = dr[1:]
+    cr = (port_val[-1]/port_val[0]) - 1
+    adr = dr.mean()
+    sddr = dr.std()
+    sr = np.sqrt(sf) * np.mean(dr - rfr) / sddr
 
     # Compare daily portfolio value with SPY using a normalized plot
     if gen_plot:
-        # add code to plot here
-        df_temp = pd.concat([port_val, prices_SPY], keys=['Portfolio', 'SPY'], axis=1)
-        pass
+        port_val_normed = port_val / port_val.ix[0]
+        prices_SPY_normed = prices_SPY / prices_SPY.ix[0]
+        df_temp = pd.concat([port_val_normed, prices_SPY_normed], keys=['Portfolio', 'SPY'], axis=1)
+        plot_data(df_temp)
 
-    # Add code here to properly compute end value
+    # TODO Add code here to properly compute end value
     ev = sv
 
     return cr, adr, sddr, sr, ev
@@ -46,7 +56,7 @@ if __name__ == "__main__":
     # Note that ALL of these values will be set to different values by
     # the autograder!
     start_date = dt.datetime(2010,1,1)
-    end_date = dt.datetime(2009,1,1)
+    end_date = dt.datetime(2010,12,31)
     symbols = ['GOOG', 'AAPL', 'GLD', 'XOM']
     allocations = [0.2, 0.3, 0.4, 0.1]
     start_val = 1000000  
@@ -58,7 +68,7 @@ if __name__ == "__main__":
         syms = symbols, \
         allocs = allocations,\
         sv = start_val, \
-        gen_plot = False)
+        gen_plot = True)
 
     # Print statistics
     print "Start Date:", start_date
