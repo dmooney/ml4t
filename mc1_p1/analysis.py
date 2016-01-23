@@ -73,13 +73,17 @@ if __name__ == "__main__":
     # Define input parameters
     # Note that ALL of these values will be set to different values by
     # the autograder!
+
     start_date = dt.datetime(2010,1,1)
     end_date = dt.datetime(2010,12,31)
     symbols = ['GOOG', 'AAPL', 'GLD', 'XOM']
-    allocations = [0.2, 0.3, 0.4, 0.1]
-    start_val = 1000000  
+    allocations = [0.2, 0.2, 0.4, 0.2]
+    start_val = 1000000
     risk_free_rate = 0.0
     sample_freq = 252
+    test(start_date, end_date, symbols, allocations, start_val, risk_free_rate, sample_freq)
+
+    allocations = [0.2, 0.3, 0.4, 0.1]
 
     test(start_date, end_date, symbols, allocations, start_val, risk_free_rate, sample_freq)
 
