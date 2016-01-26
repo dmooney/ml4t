@@ -53,7 +53,7 @@ def test(sd, ed, syms, allocs, sv, rfr, sf):
         syms = symbols, \
         allocs = allocations,\
         sv = start_val, \
-        gen_plot = True)
+        gen_plot = False)
 
     # Print statistics
     print "Start Date:", start_date
