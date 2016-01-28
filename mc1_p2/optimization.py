@@ -52,23 +52,21 @@ def optimize_portfolio(sd=dt.datetime(2008,1,1), ed=dt.datetime(2009,1,1), \
     port_val = daily_values(prices, initial_alloc)
 
     bounds = [(0.0, 1.0)] * len(syms)
+    constraints = ({ 'type': 'eq', 'fun': lambda inputs: 1.0 - np.sum(inputs) })
 
     # find the allocations for the optimal portfolio
     # note that the values here ARE NOT meant to be correct for a test case
-    result = opt.minimize(f, initial_alloc, args=(prices,), method='SLSQP', options={'disp':True}, bounds=bounds)
+    result = opt.minimize(f, initial_alloc, args=(prices,), method='SLSQP', options={'disp':True}, bounds=bounds, constraints=constraints)
     allocs = result.x
     cr, adr, sddr, sr = stats(port_val, daily_returns(port_val))
 
     # Compare daily portfolio value with SPY using a normalized plot
     if gen_plot:
-        port_val_normed = port_val / port_val.ix[0]
         prices_SPY_normed = prices_SPY / prices_SPY.ix[0]
         opt_val = daily_values(prices, allocs)
         opt_val_normed = opt_val / opt_val.ix[0]
-        df_temp = pd.concat([port_val_normed, opt_val_normed, prices_SPY_normed], keys=['Even Alloc', 'Optimized', 'SPY'], axis=1)
+        df_temp = pd.concat([opt_val_normed, prices_SPY_normed], keys=[','.join(syms), 'SPY'], axis=1)
         plot_data(df_temp)
-        # df_temp = pd.concat([port_val, prices_SPY], keys=['Portfolio', 'SPY'], axis=1)
-        # pass
 
     return allocs, cr, adr, sddr, sr
 
@@ -82,7 +80,8 @@ if __name__ == "__main__":
 
     start_date = dt.datetime(2010,1,1)
     end_date = dt.datetime(2010,12,31)
-    symbols = ['GOOG', 'AAPL', 'GLD', 'XOM']
+    symbols = ['GOOG', 'AAPL', 'GLD', 'HNZ']
+
 
     # Assess the portfolio
     allocations, cr, adr, sddr, sr = optimize_portfolio(sd = start_date, ed = end_date, syms = symbols, gen_plot = True)
@@ -91,8 +90,82 @@ if __name__ == "__main__":
     print "Start Date:", start_date
     print "End Date:", end_date
     print "Symbols:", symbols
-    print "Allocations:", allocations
+    print "Allocations:", allocations, np.sum(allocations)
     print "Sharpe Ratio:", sr
     print "Volatility (stdev of daily returns):", sddr
     print "Average Daily Return:", adr
     print "Cumulative Return:", cr
+    #
+    # start_date = dt.datetime(2010,1,1)
+    # end_date = dt.datetime(2010,12,31)
+    # symbols = ['GOOG', 'AAPL', 'GLD', 'XOM']
+    #
+    #
+    # # Assess the portfolio
+    # allocations, cr, adr, sddr, sr = optimize_portfolio(sd = start_date, ed = end_date, syms = symbols, gen_plot = True)
+    #
+    # # Print statistics
+    # print "Start Date:", start_date
+    # print "End Date:", end_date
+    # print "Symbols:", symbols
+    # print "Allocations:", allocations
+    # print "Sharpe Ratio:", sr
+    # print "Volatility (stdev of daily returns):", sddr
+    # print "Average Daily Return:", adr
+    # print "Cumulative Return:", cr
+    #
+    # start_date = dt.datetime(2004,1,1)
+    # end_date = dt.datetime(2006,1,1)
+    # symbols = ['AXP', 'HPQ', 'IBM', 'HNZ']
+    #
+    #
+    # # Assess the portfolio
+    # allocations, cr, adr, sddr, sr = optimize_portfolio(sd = start_date, ed = end_date, syms = symbols, gen_plot = True)
+    #
+    # # Print statistics
+    # print "Start Date:", start_date
+    # print "End Date:", end_date
+    # print "Symbols:", symbols
+    # print "Allocations:", allocations
+    # print "Sharpe Ratio:", sr
+    # print "Volatility (stdev of daily returns):", sddr
+    # print "Average Daily Return:", adr
+    # print "Cumulative Return:", cr
+    #
+    #
+    # start_date = dt.datetime(2004,12,1)
+    # end_date = dt.datetime(2006,5,31)
+    # symbols = ['YHOO', 'XOM', 'GLD', 'HNZ']
+    #
+    #
+    # # Assess the portfolio
+    # allocations, cr, adr, sddr, sr = optimize_portfolio(sd = start_date, ed = end_date, syms = symbols, gen_plot = True)
+    #
+    # # Print statistics
+    # print "Start Date:", start_date
+    # print "End Date:", end_date
+    # print "Symbols:", symbols
+    # print "Allocations:", allocations
+    # print "Sharpe Ratio:", sr
+    # print "Volatility (stdev of daily returns):", sddr
+    # print "Average Daily Return:", adr
+    # print "Cumulative Return:", cr
+    #
+    #
+    # start_date = dt.datetime(2005,12,1)
+    # end_date = dt.datetime(2006,5,31)
+    # symbols = ['YHOO', 'HPQ', 'GLD', 'HNZ']
+    #
+    #
+    # # Assess the portfolio
+    # allocations, cr, adr, sddr, sr = optimize_portfolio(sd = start_date, ed = end_date, syms = symbols, gen_plot = True)
+    #
+    # # Print statistics
+    # print "Start Date:", start_date
+    # print "End Date:", end_date
+    # print "Symbols:", symbols
+    # print "Allocations:", allocations
+    # print "Sharpe Ratio:", sr
+    # print "Volatility (stdev of daily returns):", sddr
+    # print "Average Daily Return:", adr
+    # print "Cumulative Return:", cr
