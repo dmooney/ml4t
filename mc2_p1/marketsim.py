@@ -34,19 +34,18 @@ def execute_order(cash, holdings, order, prices):
 
     leverage = (longs + abs(shorts)) / (longs + shorts + new_cash)
     if leverage > 2.0:
-        print("rejected: ", date, symbol, order_type, shares, holdings, cash, leverage, longs, shorts)
+        # print("rejected: ", date, symbol, order_type, shares, holdings, cash, leverage, longs, shorts)
         return cash, holdings
     else:
-        print("executed: ", date, symbol, order_type, shares, new_holdings, new_cash, leverage, longs, shorts)
+        # print("executed: ", date, symbol, order_type, shares, new_holdings, new_cash, leverage, longs, shorts)
         return new_cash, new_holdings
 
 def print_stats(start_date, end_date, prices, portvals, sf=252.0, rfr=0.0):
 
-    cum_ret = (portvals["Value"].iget(-1)/portvals["Value"].iget(0)) - 1
-
+    cum_ret = portvals["Value"].iget(-1)/portvals["Value"].iget(0) - 1
 
     dr = portvals.copy()
-    dr[1:] = portvals[1:].values / portvals[:-1].values - 1
+    dr[1:] = portvals[1:].values / portvals[:-1].values - 1.0
     dr = dr[1:]
     avg_daily_ret = dr.mean()
     std_daily_ret = dr.std()
@@ -86,7 +85,8 @@ def compute_portvals(orders_file = "./orders/orders.csv", start_val = 1000000):
     for symbol in symbols:
         holdings[symbol] = 0
 
-    portvals = pd.DataFrame(index=prices.index, columns=['Value'])
+    portvals = pd.DataFrame(index=prices.index, columns=['Value'], dtype=np.float64)
+    # print(type(portvals))
 
     for index in portvals.index:
 
@@ -102,7 +102,7 @@ def compute_portvals(orders_file = "./orders/orders.csv", start_val = 1000000):
             if (holdings[symbol] != 0):
                 price = prices[[symbol]].loc[index.date()][0]
                 portvals.ix[index] = portvals.ix[index] + (price * holdings[symbol])
-        print(portvals.ix[index])
+        # print(portvals.ix[index])
 
     print_stats(start_date, end_date, prices, portvals)
 
@@ -113,12 +113,13 @@ def test_code():
     # note that during autograding his function will not be called.
     # Define input parameters
 
-    of = "./orders/orders-leverage-2.csv"
-    print(of)
+    of = "./orders/orders-leverage-1.csv"
+    # print(of)
     sv = 1000000
 
     # Process orders
     portvals = compute_portvals(orders_file = of, start_val = sv)
+    # print(type(portvals))
     # plot_data(portvals)
     if isinstance(portvals, pd.DataFrame):
         portvals = portvals[portvals.columns[0]] # just get the first column
