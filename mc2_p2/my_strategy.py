@@ -53,24 +53,24 @@ def print_stats(start_date, end_date, prices, portvals, sf=252.0, rfr=0.0):
     sharpe_ratio = np.sqrt(sf) * np.mean(dr - rfr) / std_daily_ret
     ev = portvals["Value"].iget(-1)
 
-    # print "Date Range: {} to {}".format(start_date, end_date)
-    # print
-    # print "Sharpe Ratio of Fund: {}".format(sharpe_ratio)
-    # # print "Sharpe Ratio of SPY : {}".format(sharpe_ratio_SPY)
-    # print
-    # print "Cumulative Return of Fund: {}".format(cum_ret)
-    # # print "Cumulative Return of SPY : {}".format(cum_ret_SPY)
-    # print
-    # print "Standard Deviation of Fund: {}".format(std_daily_ret)
-    # # print "Standard Deviation of SPY : {}".format(std_daily_ret_SPY)
-    # print
-    # print "Average Daily Return of Fund: {}".format(avg_daily_ret)
-    # # print "Average Daily Return of SPY : {}".format(avg_daily_ret_SPY)
-    # print
-    # print "Final Portfolio Value: {}".format(portvals["Value"].iget(-1))
-    #
-    # print
-    # print "Performance vs baseline: {}".format(cum_ret / 0.3524)
+    print "Date Range: {} to {}".format(start_date, end_date)
+    print
+    print "Sharpe Ratio of Fund: {}".format(sharpe_ratio)
+    # print "Sharpe Ratio of SPY : {}".format(sharpe_ratio_SPY)
+    print
+    print "Cumulative Return of Fund: {}".format(cum_ret)
+    # print "Cumulative Return of SPY : {}".format(cum_ret_SPY)
+    print
+    print "Standard Deviation of Fund: {}".format(std_daily_ret)
+    # print "Standard Deviation of SPY : {}".format(std_daily_ret_SPY)
+    print
+    print "Average Daily Return of Fund: {}".format(avg_daily_ret)
+    # print "Average Daily Return of SPY : {}".format(avg_daily_ret_SPY)
+    print
+    print "Final Portfolio Value: {}".format(portvals["Value"].iget(-1))
+
+    print
+    print "Performance vs baseline: {}".format(cum_ret / 0.3524)
     return cum_ret/0.3524
 
 
@@ -189,13 +189,16 @@ def bollinger_strat(sma_window, prices):
     df_temp = pd.concat([port_val_normed, prices_SPX_normed], keys=['Portfolio', '$SPX'], axis=1)
     # plot_data(df_temp)
 
-def sma_strat(smaX, smaY, prices):
+def sma_strat(smaX, smaY, waiting_period, prices):
     # print(smaX, smaY)
 
     sma_window = 20
 
-    prices['SMAX'] = pd.rolling_mean(prices['IBM'], smaX, smaX)
-    prices['SMAY'] = pd.rolling_mean(prices['IBM'], smaY, smaY)
+    indcX = 'SMA' + str(smaX)
+    indcY = 'SMA' + str(smaY)
+
+    prices[indcX] = pd.rolling_mean(prices['IBM'], smaX, smaX)
+    prices[indcY] = pd.rolling_mean(prices['IBM'], smaY, smaY)
     # prices['SMA'] = pd.rolling_mean(prices['IBM'], sma_window, sma_window)
     # prices['Upper'] = prices['SMA'] + 2 * pd.rolling_std(prices['IBM'], sma_window, sma_window)
     # prices['Lower'] = prices['SMA'] - 2 * pd.rolling_std(prices['IBM'], sma_window, sma_window)
@@ -203,8 +206,8 @@ def sma_strat(smaX, smaY, prices):
     # prices['Signal'] = pd.ewma(prices['MACD'], min_periods=20, span=9)
     prices['_x_above_y'] = np.nan
     prices['_y_above_x'] = np.nan
-    prices['_x_above_y'][smaY - 1:] = prices['SMAX'][smaY - 1:] > prices['SMAY'][smaY - 1:]
-    prices['_y_above_x'][smaY - 1:] = prices['SMAY'][smaY - 1:] > prices['SMAX'][smaY - 1:]
+    prices['_x_above_y'][smaY - 1:] = prices[indcX][smaY - 1:] > prices[indcY][smaY - 1:]
+    prices['_y_above_x'][smaY - 1:] = prices[indcY][smaY - 1:] > prices[indcX][smaY - 1:]
     # prices['_above_upper'] = np.nan
     # prices['_above_sma'] = np.nan
     # prices['_below_lower'] = np.nan
@@ -224,30 +227,30 @@ def sma_strat(smaX, smaY, prices):
     # prices['_VolSpike'] = np.nan
     # prices['_VolSpike'][19:] = prices['Volume'][19:] > prices['SMAVol'][19:] + 8 * pd.rolling_std(prices['Volume'][19:], 20, 20)
 
-    chart = prices.plot(title="IBM")
-    chart.set_xlabel("Date")
-    chart.set_ylabel("Price")
+    # chart = prices.plot(title="IBM")
+    # chart.set_xlabel("Date")
+    # chart.set_ylabel("Price")
 
     order_cols = ("Date", "Symbol", "Order", "Shares")
     orders = pd.DataFrame(columns=order_cols)
 
     state = 'cash'
 
-    for i in xrange(smaY + 10, prices.shape[0]):
+    for i in xrange(smaY + waiting_period, prices.shape[0]):
         today = prices.index[i]
         if state == 'cash':
-            if prices['_x_above_y'][i - 10] and not prices['_x_above_y'][i-9] and not prices['_x_above_y'][i]:
+            if prices['_x_above_y'][i - waiting_period] and not prices['_x_above_y'][i - (waiting_period - 1)] and not prices['_x_above_y'][i]:
                 state = 'short'
-                chart.axvline(today, color="r")
+                # chart.axvline(today, color="r")
                 orders.loc[len(orders)]=[today, "IBM", "SELL", 100]
             # elif np.logical_and(prices['_below_lower'][i - 1],  np.logical_not(prices['_below_lower'][i])):
             #     state = 'long'
             #     chart.axvline(today, color="g")
             #     orders.loc[len(orders)]=[today, "IBM", "BUY", 100]
         elif state == 'long':
-            if prices['_x_above_y'][i - 10] and not prices['_x_above_y'][i-9] and not prices['_x_above_y'][i]:
+            if prices['_x_above_y'][i - waiting_period] and not prices['_x_above_y'][i - (waiting_period - 1)] and not prices['_x_above_y'][i]:
                 state = 'short'
-                chart.axvline(today, color="r")
+                # chart.axvline(today, color="r")
                 orders.loc[len(orders)]=[today, "IBM", "SELL", 100]
                 orders.loc[len(orders)]=[today, "IBM", "SELL", 100]
             # if np.logical_and(prices['_below_sma'][i - 1],  np.logical_not(prices['_below_sma'][i])):
@@ -257,34 +260,37 @@ def sma_strat(smaX, smaY, prices):
         else:
             if np.logical_and(prices['_y_above_x'][i - 1],  np.logical_not(prices['_y_above_x'][i])):
                 state = 'long'
-                chart.axvline(today, color="g")
+                # chart.axvline(today, color="g")
                 orders.loc[len(orders)]=[today, "IBM", "BUY", 100]
                 orders.loc[len(orders)]=[today, "IBM", "BUY", 100]
 
 
     if state == 'long':
         orders.loc[len(orders)]=[today, "IBM", "SELL", 100]
-        chart.axvline(today, color="k")
+        # chart.axvline(today, color="k")
     elif state == 'short':
         orders.loc[len(orders)]=[today, "IBM", "BUY", 100]
-        chart.axvline(today, color="k")
+        # chart.axvline(today, color="k")
 
-    plt.show()
+    # plt.show()
 
-    orders.to_csv('orders.csv', index=False)
-    portvals, performance = compute_portvals('orders.csv', start_val=10000)
+    if len(orders) > 1:
+        orders.to_csv('orders.csv', index=False)
+        portvals, performance = compute_portvals('orders.csv', start_val=10000)
+    else:
+        performance = 0.0
 
     # start_date = orders['Date'].iloc[0]
     # end_date = orders['Date'].iloc[len(orders)-1]
     # prices_SPX = get_data(['$SPX'], pd.date_range(start_date, end_date), addSPY=False)
     # prices_SPX.dropna(inplace=True)
-
+    #
     # port_val_normed = portvals / portvals.ix[0]
     # prices_SPX_normed = prices_SPX / prices_SPX.ix[0]
     # df_temp = pd.concat([port_val_normed, prices_SPX_normed], keys=['Portfolio', '$SPX'], axis=1)
     # plot_data(df_temp)
 
-    print(smaX, smaY, performance)
+    return performance
 
 
 if __name__ == "__main__":
@@ -294,12 +300,21 @@ if __name__ == "__main__":
     # for i in xrange(15,35):
     #     bollinger_strat(i, prices.copy())
 
-    # for i in xrange(5,20):
-    #     for j in xrange(50,150,25):
-    #         sma_strat(i, j, prices.copy())
+    strats = []
+    for i in xrange(5,20):
+        for j in xrange(50,150,25):
+            for k in xrange(2,20):
+                performance = sma_strat(i, j, k, prices.copy())
+                strats.append((i, j, k, performance))
+                print(i, j, k, performance)
+    strats.sort(key=lambda tup: tup[3])
+    print(strats)
 
-    sma_strat(14, 75, prices.copy())
-
+    # print(sma_strat(14, 75, 10, prices.copy()))
+    #
+    # prices_test = get_data(['IBM'], pd.date_range(dt.datetime(2009,12,31), dt.datetime(2011,12,31)), False)
+    # prices_test.dropna(inplace=True)
+    # sma_strat(14, 75, prices_test.copy())
 
 
 
