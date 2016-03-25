@@ -227,9 +227,9 @@ def sma_strat(smaX, smaY, waiting_period, prices):
     # prices['_VolSpike'] = np.nan
     # prices['_VolSpike'][19:] = prices['Volume'][19:] > prices['SMAVol'][19:] + 8 * pd.rolling_std(prices['Volume'][19:], 20, 20)
 
-    # chart = prices.plot(title="IBM")
-    # chart.set_xlabel("Date")
-    # chart.set_ylabel("Price")
+    chart = prices.plot(title="IBM")
+    chart.set_xlabel("Date")
+    chart.set_ylabel("Price")
 
     order_cols = ("Date", "Symbol", "Order", "Shares")
     orders = pd.DataFrame(columns=order_cols)
@@ -241,7 +241,7 @@ def sma_strat(smaX, smaY, waiting_period, prices):
         if state == 'cash':
             if prices['_x_above_y'][i - waiting_period] and not prices['_x_above_y'][i - (waiting_period - 1)] and not prices['_x_above_y'][i]:
                 state = 'short'
-                # chart.axvline(today, color="r")
+                chart.axvline(today, color="r")
                 orders.loc[len(orders)]=[today, "IBM", "SELL", 100]
             # elif np.logical_and(prices['_below_lower'][i - 1],  np.logical_not(prices['_below_lower'][i])):
             #     state = 'long'
@@ -250,7 +250,7 @@ def sma_strat(smaX, smaY, waiting_period, prices):
         elif state == 'long':
             if prices['_x_above_y'][i - waiting_period] and not prices['_x_above_y'][i - (waiting_period - 1)] and not prices['_x_above_y'][i]:
                 state = 'short'
-                # chart.axvline(today, color="r")
+                chart.axvline(today, color="r")
                 orders.loc[len(orders)]=[today, "IBM", "SELL", 100]
                 orders.loc[len(orders)]=[today, "IBM", "SELL", 100]
             # if np.logical_and(prices['_below_sma'][i - 1],  np.logical_not(prices['_below_sma'][i])):
@@ -260,19 +260,19 @@ def sma_strat(smaX, smaY, waiting_period, prices):
         else:
             if np.logical_and(prices['_y_above_x'][i - 1],  np.logical_not(prices['_y_above_x'][i])):
                 state = 'long'
-                # chart.axvline(today, color="g")
+                chart.axvline(today, color="g")
                 orders.loc[len(orders)]=[today, "IBM", "BUY", 100]
                 orders.loc[len(orders)]=[today, "IBM", "BUY", 100]
 
 
     if state == 'long':
         orders.loc[len(orders)]=[today, "IBM", "SELL", 100]
-        # chart.axvline(today, color="k")
+        chart.axvline(today, color="k")
     elif state == 'short':
         orders.loc[len(orders)]=[today, "IBM", "BUY", 100]
-        # chart.axvline(today, color="k")
+        chart.axvline(today, color="k")
 
-    # plt.show()
+    plt.show()
 
     if len(orders) > 1:
         orders.to_csv('orders.csv', index=False)
@@ -280,15 +280,15 @@ def sma_strat(smaX, smaY, waiting_period, prices):
     else:
         performance = 0.0
 
-    # start_date = orders['Date'].iloc[0]
-    # end_date = orders['Date'].iloc[len(orders)-1]
-    # prices_SPX = get_data(['$SPX'], pd.date_range(start_date, end_date), addSPY=False)
-    # prices_SPX.dropna(inplace=True)
-    #
-    # port_val_normed = portvals / portvals.ix[0]
-    # prices_SPX_normed = prices_SPX / prices_SPX.ix[0]
-    # df_temp = pd.concat([port_val_normed, prices_SPX_normed], keys=['Portfolio', '$SPX'], axis=1)
-    # plot_data(df_temp)
+    start_date = orders['Date'].iloc[0]
+    end_date = orders['Date'].iloc[len(orders)-1]
+    prices_SPX = get_data(['$SPX'], pd.date_range(start_date, end_date), addSPY=False)
+    prices_SPX.dropna(inplace=True)
+
+    port_val_normed = portvals / portvals.ix[0]
+    prices_SPX_normed = prices_SPX / prices_SPX.ix[0]
+    df_temp = pd.concat([port_val_normed, prices_SPX_normed], keys=['Portfolio', '$SPX'], axis=1)
+    plot_data(df_temp)
 
     return performance
 
@@ -300,17 +300,17 @@ if __name__ == "__main__":
     # for i in xrange(15,35):
     #     bollinger_strat(i, prices.copy())
 
-    strats = []
-    for i in xrange(5,20):
-        for j in xrange(50,150,25):
-            for k in xrange(2,20):
-                performance = sma_strat(i, j, k, prices.copy())
-                strats.append((i, j, k, performance))
-                print(i, j, k, performance)
-    strats.sort(key=lambda tup: tup[3])
-    print(strats)
+    # strats = []
+    # for i in xrange(5,20):
+    #     for j in xrange(50,150,25):
+    #         for k in xrange(2,20):
+    #             performance = sma_strat(i, j, k, prices.copy())
+    #             strats.append((i, j, k, performance))
+    #             print(i, j, k, performance)
+    # strats.sort(key=lambda tup: tup[3])
+    # print(strats)
 
-    # print(sma_strat(14, 75, 10, prices.copy()))
+    print(sma_strat(15, 75, 11, prices.copy()))
     #
     # prices_test = get_data(['IBM'], pd.date_range(dt.datetime(2009,12,31), dt.datetime(2011,12,31)), False)
     # prices_test.dropna(inplace=True)
