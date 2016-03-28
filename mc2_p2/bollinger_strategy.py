@@ -110,6 +110,8 @@ def compute_portvals(orders_file = "./orders/orders.csv", start_val = 1000000):
     return portvals
 
 if __name__ == "__main__":
+    # prices = get_data(['IBM'], pd.date_range(dt.datetime(2009,12,31), dt.datetime(2011,12,31)), False)
+    # prices_test.dropna(inplace=True)
     prices = get_data(['IBM'], pd.date_range(dt.datetime(2007,12,31), dt.datetime(2009,12,31)), False)
     # prices.fillna(method='ffill', inplace=True)
     # prices.fillna(method='bfill', inplace=True)
@@ -158,20 +160,22 @@ if __name__ == "__main__":
                 chart.axvline(today, color="k")
                 orders.loc[len(orders)]=[today, "IBM", "BUY", 100]
 
-    plt.show()
+    # plt.show()
+    fig = chart.get_figure()
+    fig.savefig('bollinger.png')
 
     orders.to_csv('orders.csv', index=False)
     portvals = compute_portvals('orders.csv', start_val=10000)
 
-    start_date = orders['Date'].iloc[0]
-    end_date = orders['Date'].iloc[len(orders)-1]
-    prices_SPX = get_data(['$SPX'], pd.date_range(start_date, end_date), addSPY=False)
-    prices_SPX.dropna(inplace=True)
+    # start_date = orders['Date'].iloc[0]
+    # end_date = orders['Date'].iloc[len(orders)-1]
+    # prices_SPX = get_data(['$SPX'], pd.date_range(start_date, end_date), addSPY=False)
+    # prices_SPX.dropna(inplace=True)
 
-    port_val_normed = portvals / portvals.ix[0]
-    prices_SPX_normed = prices_SPX / prices_SPX.ix[0]
-    df_temp = pd.concat([port_val_normed, prices_SPX_normed], keys=['Portfolio', '$SPX'], axis=1)
-    plot_data(df_temp)
+    # port_val_normed = portvals / portvals.ix[0]
+    # prices_SPX_normed = prices_SPX / prices_SPX.ix[0]
+    # df_temp = pd.concat([port_val_normed, prices_SPX_normed], keys=['Portfolio', '$SPX'], axis=1)
+    # plot_data(df_temp)
 
 
 

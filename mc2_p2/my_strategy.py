@@ -41,7 +41,7 @@ def execute_order(cash, holdings, order, prices):
         # print("executed: ", date, symbol, order_type, shares, new_holdings, new_cash, leverage, longs, shorts)
         return new_cash, new_holdings
 
-def print_stats(start_date, end_date, prices, portvals, sf=252.0, rfr=0.0):
+def print_stats(start_date, end_date, prices, portvals, sf=252.0, rfr=0.0, baseline_perf=0.3524):
 
     cum_ret = portvals["Value"].iget(-1)/portvals["Value"].iget(0) - 1
 
@@ -70,12 +70,12 @@ def print_stats(start_date, end_date, prices, portvals, sf=252.0, rfr=0.0):
     print "Final Portfolio Value: {}".format(portvals["Value"].iget(-1))
 
     print
-    print "Performance vs baseline: {}".format(cum_ret / 0.3524)
-    return cum_ret/0.3524
+    print "Performance vs baseline: {}".format(cum_ret / baseline_perf)
+    return cum_ret/baseline_perf
 
 
 
-def compute_portvals(orders_file = "./orders/orders.csv", start_val = 1000000):
+def compute_portvals(orders_file = "./orders/orders.csv", start_val = 1000000, baseline_perf=0.3524):
     # this is the function the autograder will call to test your code
     orders = pd.read_csv(orders_file, parse_dates=True)
 
@@ -108,7 +108,7 @@ def compute_portvals(orders_file = "./orders/orders.csv", start_val = 1000000):
                 portvals.ix[index] = portvals.ix[index] + (price * holdings[symbol])
         # print(portvals.ix[index])
 
-    performance = print_stats(start_date, end_date, prices, portvals)
+    performance = print_stats(start_date, end_date, prices, portvals, baseline_perf=baseline_perf)
 
     return portvals, performance
 
@@ -189,7 +189,7 @@ def bollinger_strat(sma_window, prices):
     df_temp = pd.concat([port_val_normed, prices_SPX_normed], keys=['Portfolio', '$SPX'], axis=1)
     # plot_data(df_temp)
 
-def sma_strat(smaX, smaY, waiting_period, prices):
+def sma_strat(smaX, smaY, waiting_period, prices, baseline_perf=0.3524):
     # print(smaX, smaY)
 
     sma_window = 20
@@ -272,23 +272,25 @@ def sma_strat(smaX, smaY, waiting_period, prices):
         orders.loc[len(orders)]=[today, "IBM", "BUY", 100]
         chart.axvline(today, color="k")
 
-    plt.show()
+    # plt.show()
+    fig = chart.get_figure()
+    fig.savefig('my_strategy.png')
 
     if len(orders) > 1:
         orders.to_csv('orders.csv', index=False)
-        portvals, performance = compute_portvals('orders.csv', start_val=10000)
+        portvals, performance = compute_portvals('orders.csv', start_val=10000, baseline_perf=baseline_perf)
     else:
         performance = 0.0
 
-    start_date = orders['Date'].iloc[0]
-    end_date = orders['Date'].iloc[len(orders)-1]
-    prices_SPX = get_data(['$SPX'], pd.date_range(start_date, end_date), addSPY=False)
-    prices_SPX.dropna(inplace=True)
-
-    port_val_normed = portvals / portvals.ix[0]
-    prices_SPX_normed = prices_SPX / prices_SPX.ix[0]
-    df_temp = pd.concat([port_val_normed, prices_SPX_normed], keys=['Portfolio', '$SPX'], axis=1)
-    plot_data(df_temp)
+    # start_date = orders['Date'].iloc[0]
+    # end_date = orders['Date'].iloc[len(orders)-1]
+    # prices_SPX = get_data(['$SPX'], pd.date_range(start_date, end_date), addSPY=False)
+    # prices_SPX.dropna(inplace=True)
+    #
+    # port_val_normed = portvals / portvals.ix[0]
+    # prices_SPX_normed = prices_SPX / prices_SPX.ix[0]
+    # df_temp = pd.concat([port_val_normed, prices_SPX_normed], keys=['Portfolio', '$SPX'], axis=1)
+    # plot_data(df_temp)
 
     return performance
 
@@ -311,10 +313,11 @@ if __name__ == "__main__":
     # print(strats)
 
     print(sma_strat(15, 75, 11, prices.copy()))
+
     #
     # prices_test = get_data(['IBM'], pd.date_range(dt.datetime(2009,12,31), dt.datetime(2011,12,31)), False)
     # prices_test.dropna(inplace=True)
-    # sma_strat(14, 75, prices_test.copy())
+    # sma_strat(15, 75, 11, prices_test.copy(), 0.126)
 
 
 

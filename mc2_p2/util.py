@@ -9,16 +9,13 @@ def symbol_to_path(symbol, base_dir=os.path.join("..", "data")):
     return os.path.join(base_dir, "{}.csv".format(str(symbol)))
 
 
-def get_data(symbols, dates, addSPY=True, addVolume=False):
+def get_data(symbols, dates, addSPY=True):
     """Read stock data (adjusted close) for given symbols from CSV files."""
     df = pd.DataFrame(index=dates)
     if addSPY and 'SPY' not in symbols:  # add SPY for reference, if absent
         symbols = ['SPY'] + symbols
 
-    if addVolume:
-        cols = ['Date', 'Adj Close', 'Volume']
-    else:
-        cols = ['Date', 'Adj Close']
+    cols = ['Date', 'Adj Close']
 
     for symbol in symbols:
         df_temp = pd.read_csv(symbol_to_path(symbol), index_col='Date',
