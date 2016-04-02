@@ -5,6 +5,8 @@ Test a learner.  (c) 2015 Tucker Balch
 import numpy as np
 import math
 import LinRegLearner as lrl
+import KNNLearner as knn
+import BagLearner as bl
 
 if __name__=="__main__":
     inf = open('Data/ripple.csv')
@@ -24,7 +26,8 @@ if __name__=="__main__":
     print testY.shape
 
     # create a learner and train it
-    learner = lrl.LinRegLearner(verbose = True) # create a LinRegLearner
+    # learner = lrl.LinRegLearner(verbose = True) # create a LinRegLearner
+    learner = knn.KNNLearner(k = 3, verbose = False) # constructor
     learner.addEvidence(trainX, trainY) # train it
 
     # evaluate in sample
