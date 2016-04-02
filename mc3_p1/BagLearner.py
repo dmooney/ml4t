@@ -20,21 +20,23 @@ class BagLearner(object):
         @param dataX: X values of data to add
         @param dataY: the Y training values
         """
+        for learner in self.learners:
+            randIndices = np.random.randint(0, len(dataX), len(dataX))
+            learner.addEvidence(dataX[randIndices], dataY[randIndices])
 
-        # slap on 1s column so linear regression finds a constant term
-        newdataX = np.ones([dataX.shape[0],dataX.shape[1]+1])
-        newdataX[:,0:dataX.shape[1]]=dataX
-
-        # build and save the model
-        self.model_coefs, residuals, rank, s = np.linalg.lstsq(newdataX, dataY)
-        
     def query(self, points):
         """
         @summary: Estimate a set of test points given the model we built.
         @param points: should be a numpy array with each row corresponding to a specific query.
         @returns the estimated values according to the saved model.
         """
-        return (self.model_coefs[:-1] * points).sum(axis = 1) + self.model_coefs[-1]
+        values = np.zeros((len(points), len(self.learners)))
+        i = 0
+        for learner in self.learners:
+            values[:,i] = learner.query(points)
+            i = i + 1
+        x = np.mean(values, axis=1)
+        return x
 
 if __name__=="__main__":
     print "the secret clue is 'zzyzx'"

@@ -27,7 +27,8 @@ if __name__=="__main__":
 
     # create a learner and train it
     # learner = lrl.LinRegLearner(verbose = True) # create a LinRegLearner
-    learner = knn.KNNLearner(k = 3, verbose = False) # constructor
+    # learner = knn.KNNLearner(k = 3, verbose = False) # constructor
+    learner = bl.BagLearner(learner = knn.KNNLearner, kwargs = {"k":3}, bags = 20, boost = False, verbose = False)
     learner.addEvidence(trainX, trainY) # train it
 
     # evaluate in sample
