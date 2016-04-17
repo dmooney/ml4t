@@ -9,7 +9,8 @@ import KNNLearner as knn
 import BagLearner as bl
 
 if __name__=="__main__":
-    files = ['Data/best4KNN.csv', 'Data/3_groups.csv', 'Data/best4linreg.csv', 'Data/ripple.csv', 'Data/simple.csv']
+    # files = ['Data/best4KNN.csv', 'Data/3_groups.csv', 'Data/best4linreg.csv', 'Data/ripple.csv', 'Data/simple.csv']
+    files = ['Data/ripple.csv']
     for file in files:
         print(file)
         inf = open(file)
@@ -30,9 +31,12 @@ if __name__=="__main__":
 
         # create a learner and train it
         learners = []
-        learners.append(lrl.LinRegLearner(verbose = True)) # create a LinRegLearner
-        learners.append(knn.KNNLearner(k = 3, verbose = False)) # constructor
-        # learner = bl.BagLearner(learner = knn.KNNLearner, kwargs = {"k":3}, bags = 20, boost = False, verbose = False)
+        # learners.append(lrl.LinRegLearner(verbose = True)) # create a LinRegLearner
+        # learners.append(knn.KNNLearner(k = 3, verbose = False)) # constructor
+        learners.append(bl.BagLearner(learner = knn.KNNLearner, kwargs = {"k":3}, bags = 2, boost = False, verbose = False))
+        learners.append(bl.BagLearner(learner = knn.KNNLearner, kwargs = {"k":3}, bags = 5, boost = False, verbose = False))
+        learners.append(bl.BagLearner(learner = knn.KNNLearner, kwargs = {"k":3}, bags = 10, boost = False, verbose = False))
+        learners.append(bl.BagLearner(learner = knn.KNNLearner, kwargs = {"k":3}, bags = 15, boost = False, verbose = False))
         for learner in learners:
             print type(learner)
             learner.addEvidence(trainX, trainY) # train it
