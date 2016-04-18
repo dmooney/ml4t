@@ -3,6 +3,7 @@ A simple wrapper for linear regression.  (c) 2015 Tucker Balch
 """
 
 import numpy as np
+import pandas as pd
 
 class KNNLearner(object):
 
@@ -26,7 +27,8 @@ class KNNLearner(object):
         @param points: should be a numpy array with each row corresponding to a specific query.
         @returns the estimated values according to the saved model.
         """
-        values = self.dataY.copy()
+        # print(points.shape, self.dataY.shape)
+        values = pd.Series(index=points.index)
         i = 0
         for point in points.values:
             w = self.dataX - point
