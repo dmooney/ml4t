@@ -18,6 +18,7 @@ def add_bb(prices, symbol):
 
 if __name__ == "__main__":
     symbol = 'IBM'
+    symbol = 'ML4T-220'
 
 
     prices = get_data([symbol], pd.date_range(dt.datetime(2007,12,31), dt.datetime(2011,12,31)), False)
@@ -118,7 +119,7 @@ if __name__ == "__main__":
     plot1 = prices.copy()
     del plot1['bb_normed']
     del plot1['15div75sma']
-    del plot1['IBM_normed']
+    del plot1[symbol + '_normed']
     del plot1['momentum']
     plot1["Training Y"] = ((1.0 + Y)  *  prices[symbol])
     plot1["Predicted Y"] = ((1.0 + predY) *  prices[symbol])
@@ -127,7 +128,7 @@ if __name__ == "__main__":
     chart.set_xlabel("Date")
     chart.set_ylabel("Price")
     fig = chart.get_figure()
-    fig.savefig("plot1.png")
+    fig.savefig(symbol + "_plot1.png")
     # plt.show()
 
 
