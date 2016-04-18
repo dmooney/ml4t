@@ -26,14 +26,16 @@ class KNNLearner(object):
         @param points: should be a numpy array with each row corresponding to a specific query.
         @returns the estimated values according to the saved model.
         """
-        values = []
-        for point in points:
+        values = self.dataY.copy()
+        i = 0
+        for point in points.values:
             w = self.dataX - point
             x = w**2
             y = np.sum(x, axis=1)
             z = np.argsort(y)[:self.k]
             foo = np.mean(self.dataY[z])
-            values.append(foo)
+            values[i] = foo
+            i = i + 1
         return values
 
 if __name__=="__main__":

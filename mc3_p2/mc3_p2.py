@@ -18,7 +18,7 @@ def add_bb(prices, symbol):
 
 if __name__ == "__main__":
     symbol = 'IBM'
-    symbol = 'ML4T-220'
+    # symbol = 'ML4T-220'
 
 
     prices = get_data([symbol], pd.date_range(dt.datetime(2007,12,31), dt.datetime(2011,12,31)), False)
@@ -86,10 +86,10 @@ if __name__ == "__main__":
     # test_rows = data.shape[0] - train_rows
 
     # separate out training and testing data
-    trainX = X['20071231':'20091231']
-    trainY = Y['20071231':'20091231']
-    testX = X['20091231':'20111231']
-    testY = Y['20091231':'20111231']
+    trainX = X['20071231':'20091231'][75:]
+    trainY = Y['20071231':'20091231'][75:]
+    testX = X['20091231':'20111231'][75:]
+    testY = Y['20091231':'20111231'][75:]
 
     # print testX.shape
     # print testY.shape
@@ -103,7 +103,8 @@ if __name__ == "__main__":
     # learners.append(bl.BagLearner(learner = knn.KNNLearner, kwargs = {"k":3}, bags = 10, boost = False, verbose = False))
     # learners.append(bl.BagLearner(learner = knn.KNNLearner, kwargs = {"k":3}, bags = 15, boost = False, verbose = False))
     # for learner in learners:
-    learner = lrl.LinRegLearner(verbose = True)
+    # learner = lrl.LinRegLearner(verbose = True)
+    learner = knn.KNNLearner(k = 3, verbose = False)
     print type(learner)
     learner.addEvidence(trainX, trainY) # train it
 
