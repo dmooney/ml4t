@@ -124,7 +124,7 @@ def add_bb(prices, symbol):
 
 if __name__ == "__main__":
     symbol = 'IBM'
-    symbol = 'ML4T-220'
+    # symbol = 'ML4T-220'
 
 
     prices = get_data([symbol], pd.date_range(dt.datetime(2007,12,31), dt.datetime(2011,12,31)), False)
@@ -215,54 +215,60 @@ if __name__ == "__main__":
     learner.addEvidence(trainX, trainY) # train it
 
     # evaluate in sample
-    predY = learner.query(trainX) # get the predictions
-    rmse = np.sqrt(((trainY - predY) ** 2).sum()/trainY.shape[0])
-    print
-    print "In sample results"
-    print "RMSE: ", rmse
-    c = np.corrcoef(predY, y=trainY)
-    print "corr: ", c[0,1]
-
-    plot1 = prices.copy()
-    del plot1['bb_normed']
-    del plot1['15div75sma']
-    del plot1[symbol + '_normed']
-    del plot1['momentum']
-    plot1["Training Y"] = ((1.0 + Y)  *  prices[symbol])
-    plot1["Predicted Y"] = ((1.0 + predY) *  prices[symbol])
-    # print(plot1['20071231':'20091231'].tail())
-    chart = plot1['20071231':'20091231'].plot(title=symbol)
-    chart.set_xlabel("Date")
-    chart.set_ylabel("Price")
-    fig = chart.get_figure()
-    fig.savefig(symbol + "_plot1.png")
+    # predY = learner.query(trainX) # get the predictions
+    # rmse = np.sqrt(((trainY - predY) ** 2).sum()/trainY.shape[0])
+    # print
+    # print "In sample results"
+    # print "RMSE: ", rmse
+    # c = np.corrcoef(predY, y=trainY)
+    # print "corr: ", c[0,1]
+    #
+    # plot1 = prices.copy()
+    # del plot1['bb_normed']
+    # del plot1['15div75sma']
+    # del plot1[symbol + '_normed']
+    # del plot1['momentum']
+    # plot1["Training Y"] = ((1.0 + Y)  *  prices[symbol])
+    # plot1["Predicted Y"] = ((1.0 + predY) *  prices[symbol])
+    # # print(plot1['20071231':'20091231'].tail())
+    # chart = plot1['20071231':'20091231'].plot(title=symbol)
+    # chart.set_xlabel("Date")
+    # chart.set_ylabel("Price")
+    # fig = chart.get_figure()
+    # fig.savefig(symbol + "_plot1.png")
     # plt.show()
 
 
     # evaluate out of sample
-    # predY = learner.query(testX) # get the predictions
-    # rmse = np.sqrt(((testY - predY) ** 2).sum()/testY.shape[0])
-    # print
-    # print "Out of sample results"
-    # print "RMSE: ", rmse
-    # c = np.corrcoef(predY, y=testY)
-    # print "corr: ", c[0,1]
-    #
-    # plot1_oos = prices.copy()
-    # del plot1_oos['bb_normed']
-    # del plot1_oos['15div75sma']
-    # del plot1_oos[symbol + '_normed']
-    # del plot1_oos['momentum']
-    # plot1_oos["Training Y"] = ((1.0 + Y)  *  prices[symbol])
-    # plot1_oos["Predicted Y"] = ((1.0 + predY) *  prices[symbol])
-    # # print(plot1_oos['20071231':'20091231'].tail())
-    # chart = plot1_oos['20091231':'20111231'].plot(title=symbol)
-    # chart.set_xlabel("Date")
-    # chart.set_ylabel("Price")
-    # fig = chart.get_figure()
-    # fig.savefig(symbol + "_plot1_oos.png")
+    predY = learner.query(testX) # get the predictions
+    rmse = np.sqrt(((testY - predY) ** 2).sum()/testY.shape[0])
+    print
+    print "Out of sample results"
+    print "RMSE: ", rmse
+    c = np.corrcoef(predY, y=testY)
+    print "corr: ", c[0,1]
 
-    order_chart = prices.plot(title=symbol)
+    plot1_oos = prices.copy()
+    del plot1_oos['bb_normed']
+    del plot1_oos['15div75sma']
+    del plot1_oos[symbol + '_normed']
+    del plot1_oos['momentum']
+    plot1_oos["Training Y"] = ((1.0 + Y)  *  prices[symbol])
+    plot1_oos["Predicted Y"] = ((1.0 + predY) *  prices[symbol])
+    # print(plot1_oos['20071231':'20091231'].tail())
+    chart = plot1_oos['20091231':'20111231'].plot(title=symbol)
+    chart.set_xlabel("Date")
+    chart.set_ylabel("Price")
+    fig = chart.get_figure()
+    fig.savefig(symbol + "_plot1_oos.png")
+
+    orders_chart_prices = prices['20091231':'20111231'].copy()
+    del orders_chart_prices['bb_normed']
+    del orders_chart_prices['15div75sma']
+    del orders_chart_prices[symbol + '_normed']
+    del orders_chart_prices['momentum']
+
+    order_chart = orders_chart_prices.plot(title=symbol)
     order_chart.set_xlabel("Date")
     order_chart.set_ylabel("Price")
 
@@ -273,7 +279,7 @@ if __name__ == "__main__":
 
     hold = 0
     for i in xrange(predY.shape[0]):
-        today = prices.index[i]
+        today = orders_chart_prices.index[i]
         # print(i, today, predY[i])
 
         if hold > 0:
@@ -283,24 +289,24 @@ if __name__ == "__main__":
         if state == 'cash':
             if predY[i] > 0.01:
                 state = 'long'
-                chart.axvline(today, color="g")
+                order_chart.axvline(today, color="g")
                 orders.loc[len(orders)]=[today, symbol, "BUY", 100]
                 hold = 5
             elif predY[i] < -0.01:
                 state = 'short'
-                chart.axvline(today, color="r")
+                order_chart.axvline(today, color="r")
                 orders.loc[len(orders)]=[today, symbol, "SELL", 100]
                 hold = 5
 
         elif state == 'short':
             if predY[i] > 0 and predY[i] < 0.01:
                 state = 'cash'
-                chart.axvline(today, color="k")
+                order_chart.axvline(today, color="k")
                 orders.loc[len(orders)]=[today, symbol, "BUY", 100]
                 hold = 5
             elif predY[i] > 0.01:
                 state = 'long'
-                chart.axvline(today, color="g")
+                order_chart.axvline(today, color="g")
                 orders.loc[len(orders)]=[today, symbol, "BUY", 100]
                 orders.loc[len(orders)]=[today, symbol, "BUY", 100]
                 hold = 5
@@ -308,12 +314,12 @@ if __name__ == "__main__":
         else: #long
             if predY[i] < 0.01 and predY[i] > 0:
                 state = 'cash'
-                chart.axvline(today, color="k")
+                order_chart.axvline(today, color="k")
                 orders.loc[len(orders)]=[today, symbol, "SELL", 100]
                 hold = 5
             elif predY[i] < -0.01:
                 state = 'short'
-                chart.axvline(today, color="r")
+                order_chart.axvline(today, color="r")
                 orders.loc[len(orders)]=[today, symbol, "SELL", 100]
                 orders.loc[len(orders)]=[today, symbol, "SELL", 100]
                 hold = 5
@@ -321,14 +327,14 @@ if __name__ == "__main__":
 
     if state == 'long':
         orders.loc[len(orders)]=[today, symbol, "SELL", 100]
-        chart.axvline(today, color="k")
+        order_chart.axvline(today, color="k")
     elif state == 'short':
         orders.loc[len(orders)]=[today, symbol, "BUY", 100]
-        chart.axvline(today, color="k")
+        order_chart.axvline(today, color="k")
 
 
-    fig = chart.get_figure()
-    fig.savefig(symbol + '_plot2.png')
+    fig = order_chart.get_figure()
+    fig.savefig(symbol + '_oos_entry_exit.png')
     # plt.show()
 
     baseline_perf=0.3524
