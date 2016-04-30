@@ -38,6 +38,8 @@ class QLearner(object):
         self.s = 0
         self.a = 0
         self.Q = np.random.rand(num_states, num_actions) * 2 - 1
+        if self.dyna > 0:
+            self.X = [] # to hold experience tuples
 
     def querysetstate(self, s):
         """
@@ -59,12 +61,19 @@ class QLearner(object):
         """
 
         action = self.potentially_random_action(s_prime)
+        self.update_Q((self.s, self.a, s_prime, r))
 
-        self.Q[self.s, self.a] = (1 - self.alpha) * self.Q[self.s, self.a] + self.alpha * \
-                (r + self.gamma * self.Q[s_prime, np.argmax(self.Q[s_prime])])
+        # save experience tuple
+        if self.dyna > 0:
+            self.X.append((self.s, self.a, s_prime, r))
+
         self.a = action
         self.s = s_prime
         self.rar = self.rar * self.radr
+
+        # dyna
+        for _ in xrange(self.dyna):
+            self.update_Q(rand.choice(self.X))
 
         if self.verbose: print "s =", s_prime,"a =",action,"r =",r,"rar = ",self.rar
         return action
@@ -78,6 +87,14 @@ class QLearner(object):
             action = np.argmax(self.Q[s])
         return action
 
+    def update_Q(self, experience):
+        s = experience[0]
+        a = experience[1]
+        s_prime = experience[2]
+        r = experience[3]
+
+        self.Q[s, a] = (1 - self.alpha) * self.Q[s, a] + self.alpha * \
+                (r + self.gamma * self.Q[s_prime, np.argmax(self.Q[s_prime])])
 
 if __name__=="__main__":
     print "Remember Q from Star Trek? Well, this isn't him"
