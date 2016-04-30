@@ -129,7 +129,7 @@ if __name__=="__main__":
             data[newpos] = 2 # move to new location
             robopos = newpos # update the location
             if verbose: printmap(data)
-            if verbose: time.sleep(1)
+            if verbose: time.sleep(0.05)
             steps += 1
 
         print iteration, "," , steps
