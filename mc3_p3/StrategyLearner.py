@@ -31,7 +31,6 @@ class StrategyLearner(object):
         ed=dt.datetime(2009,1,1), \
         sv = 10000): 
 
-        self.learner = ql.QLearner()
         # add your code to do learning here
         syms=[symbol]
         dates = pd.date_range(sd, ed)
@@ -47,10 +46,67 @@ class StrategyLearner(object):
         prices_all[symbol + "_volume"] = volume
 
         prices_all[symbol + "_sma15"] = prices_all[symbol].rolling(15, 15).mean()
-        prices_all[14:] = self.discretize(symbol + "_sma15", prices_all[14:], 5)
+        prices_all[14:] = self.discretize(symbol + "_sma15", prices_all[14:], 9)
         # prices_all[symbol + "_sma15"][15:] = self.discretize(symbol + "_sma15", prices_all[15:], 9)
         print(prices_all[13:])
 
+        self.learner = ql.QLearner(num_states = 10 * 10 * 10 * 3, num_actions=3)
+
+        # for each day in training data
+            # compute current state (cumret + holding)
+            # compute reward for last action
+            # query learner with current stat and reward to get an action
+            # implement the action the learner returned (BUY, SELL, NOTHING) and update port value
+
+        self.cash = sv
+        self.current_value = self.cash
+        self.pos = 1 # cash
+
+        first = True
+        for date in prices_all[14:].index:
+            print(date)
+            mom = prices_all.ix[date][momentum_label]
+            vol = prices_all.ix[date][3]
+            sma = prices_all.ix[date][4]
+            s = self.pos * 1000 + mom * 100 + vol * 10 + sma
+            if first:
+                a = self.learner.querysetstate(s)
+                first = False
+            else:
+                a = self.learner.query(s, self.current_value)
+
+            price = prices_all.ix[date][symbol]
+
+            # trade
+            if a == 0:      # buy
+                if self.pos == 0:
+                    self.pos = 1
+                    self.cash = self.cash - price * 100
+                    print("buy")
+                elif self.pos == 1:
+                    self.pos = 2
+                    self.cash = self.cash - price * 100
+                    print("buy")
+            elif a == 1:    # sell
+                if self.pos == 1:
+                    self.pos = 0
+                    self.cash = self.cash + price * 100
+                    print("sell")
+                elif self.pos == 2:
+                    self.pos = 1
+                    self.cash = self.cash + price * 100
+                    print("sell")
+            else:           # nothing
+                pass
+
+            if self.pos == 0:
+                self.current_value = self.cash - price * 100
+            elif self.pos == 1:
+                self.current_value = self.cash
+            else:
+                self.current_value = self.cash + price * 100
+
+            print(self.current_value)
 
         # example usage of the old backward compatible util function
         # syms=[symbol]
