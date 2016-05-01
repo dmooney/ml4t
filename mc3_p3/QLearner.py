@@ -38,8 +38,7 @@ class QLearner(object):
         self.s = 0
         self.a = 0
         self.Q = np.random.rand(num_states, num_actions) * 2 - 1
-        if self.dyna > 0:
-            self.X = [] # to hold experience tuples
+        self.X = [] # to hold experience tuples
 
     def querysetstate(self, s):
         """
@@ -64,8 +63,7 @@ class QLearner(object):
         self.update_Q((self.s, self.a, s_prime, r))
 
         # save experience tuple
-        if self.dyna > 0:
-            self.X.append((self.s, self.a, s_prime, r))
+        self.X.append((self.s, self.a, s_prime, r))
 
         self.a = action
         self.s = s_prime
