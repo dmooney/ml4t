@@ -54,7 +54,8 @@ class StrategyLearner(object):
         self.learner = ql.QLearner(
             num_states = 10 * 10 * 10 * 3,
             num_actions = 3,
-            dyna = 25)
+            dyna = 25,
+            rar = 0.98)
 
         best_final_value = -1000000
         previous_final_value = -1000000
@@ -75,7 +76,7 @@ class StrategyLearner(object):
             # else:
             #     converge_countdown = 5
             learn_iteration = learn_iteration + 1
-            print("Learning iteration: ", learn_iteration, "Convergence Countdown", converge_countdown)
+            if self.verbose: print("Learning iteration: ", learn_iteration, "Convergence Countdown", converge_countdown)
 
     def learn_loop(self, prices_all, sv, symbol):
         # for each day in training data
@@ -152,7 +153,7 @@ class StrategyLearner(object):
             portvals.append(self.current_value)
 
 
-        print(self.current_value)
+        if self.verbose: print(self.current_value)
         return self.current_value
 
             # example usage of the old backward compatible util function
@@ -175,10 +176,22 @@ class StrategyLearner(object):
         ed=dt.datetime(2010,1,1), \
         sv = 10000):
 
+        syms=[symbol]
         # here we build a fake set of trades
         # your code should return the same sort of data
         dates = pd.date_range(sd, ed)
         prices_all = ut.get_data([symbol], dates)  # automatically adds SPY
+        momentum_label = symbol + "_momentum"
+        prices_all[momentum_label] = prices_all[symbol] / prices_all[symbol].shift(5) - 1.0
+        prices_all[4:] = self.discretize(momentum_label, prices_all[4:], 9)
+
+        volume_all = ut.get_data(syms, dates, colname = "Volume")  # automatically adds SPY
+        volume = volume_all[syms]  # only portfolio symbols
+        volume = self.discretize(symbol, volume, 9)
+        prices_all[symbol + "_volume"] = volume
+
+        prices_all[symbol + "_sma15"] = prices_all[symbol].rolling(15, 15).mean()
+        prices_all[14:] = self.discretize(symbol + "_sma15", prices_all[14:], 9)
         trades = prices_all[[symbol,]]  # only portfolio symbols
         trades_SPY = prices_all['SPY']  # only SPY, for comparison later
         trades.values[:,:] = 0 # set them all to nothing
@@ -186,12 +199,74 @@ class StrategyLearner(object):
         # trades.values[5,:] = -100 # add a SELL at the 6th date
         # trades.values[6,:] = -100 # add a SELL at the 7th date
         # trades.values[8,:] = -100 # add a SELL at the 9th date
-        for date in dates:
-            a = self.learner.query()
+        self.cash = sv
+        self.current_value = self.cash
+        self.pos = 1  # cash
+        first = True
+        i = 0
+        for date in prices_all[14:].index:
+            mom = prices_all.ix[date][2]
+            vol = prices_all.ix[date][3]
+            sma = prices_all.ix[date][4]
+            s_prime = self.pos * 1000 + mom * 100 + vol * 10 + sma
+            if first:
+                a = self.learner.querysetstate(s_prime)
+                first = False
+            else:
+                a = self.learner.query(s_prime, self.current_value)
 
-        if self.verbose: print type(trades) # it better be a DataFrame!
-        if self.verbose: print trades
-        if self.verbose: print prices_all
+            price = prices_all.ix[date][symbol]
+
+            penalty = 1.0
+            # trade
+            if a == 0:  # buy
+                if self.pos == 0:
+                    self.pos = 1
+                    self.cash = self.cash - price * 100
+                    # print("buy")
+                    trades.values[i,:] = 100
+                elif self.pos == 1:
+                    self.pos = 2
+                    self.cash = self.cash - price * 100
+                    trades.values[i,:] = 100
+                    # print("buy")
+                else:
+                    pass
+                    # penalty = 0.8
+            elif a == 1:  # sell
+                if self.pos == 1:
+                    self.pos = 0
+                    self.cash = self.cash + price * 100
+                    # print("sell")
+                    trades.values[i,:] = -100
+                elif self.pos == 2:
+                    self.pos = 1
+                    self.cash = self.cash + price * 100
+                    # print("sell")
+                    trades.values[i,:] = -100
+                else:
+                    pass
+                    # penalty = 0.8
+            else:  # nothing
+                pass
+
+            if self.pos == 0:
+                self.current_value = self.cash - price * 100
+            elif self.pos == 1:
+                self.current_value = self.cash
+            else:
+                self.current_value = self.cash + price * 100
+
+            i = i + 1
+
+        if self.pos == 0: # short
+            trades.values[i,:] = 100
+        elif self.pos == 2: # long
+            trades.values[i,:] = -100
+
+        # if self.verbose: print type(trades) # it better be a DataFrame!
+        # if self.verbose: print trades
+        # if self.verbose: print prices_all
         return trades
 
 if __name__=="__main__":

@@ -13,18 +13,18 @@ def test_code(verb = True):
     learner = sl.StrategyLearner(verbose = verb)
 
     # set parameters for training the learner
-    sym = "GOOG"
-    stdate =dt.datetime(2008,1,1)
-    enddate =dt.datetime(2008,12,31) # just a few days for "shake out"
+    sym = "ML4T-220"
+    stdate =dt.datetime(2007,12,31)
+    enddate =dt.datetime(2009,12,31) # just a few days for "shake out"
 
     # train the learner
     learner.addEvidence(symbol = sym, sd = stdate, \
         ed = enddate, sv = 10000) 
 
     # set parameters for testing
-    sym = "IBM"
-    stdate =dt.datetime(2009,1,1)
-    enddate =dt.datetime(2009,12,31)
+    sym = "ML4T-220"
+    stdate =dt.datetime(2009,12,31)
+    enddate =dt.datetime(2011,12,31)
 
     # get some data for reference
     syms=[sym]
@@ -54,4 +54,4 @@ def test_code(verb = True):
     # we will add code here to evaluate your trades
 
 if __name__=="__main__":
-    test_code(verb = False)
+    test_code(verb = True)
