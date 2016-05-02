@@ -25,6 +25,7 @@ class StrategyLearner(object):
         data[symbol] = np.digitize(data[symbol], bins)
         return data
 
+
     # this method should create a QLearner, and train it for trading
     def addEvidence(self, symbol = "IBM", \
         sd=dt.datetime(2008,1,1), \
@@ -48,55 +49,97 @@ class StrategyLearner(object):
         prices_all[symbol + "_sma15"] = prices_all[symbol].rolling(15, 15).mean()
         prices_all[14:] = self.discretize(symbol + "_sma15", prices_all[14:], 9)
         # prices_all[symbol + "_sma15"][15:] = self.discretize(symbol + "_sma15", prices_all[15:], 9)
-        print(prices_all[13:])
+        # print(prices_all[13:])
 
-        self.learner = ql.QLearner(num_states = 10 * 10 * 10 * 3, num_actions=3)
+        self.learner = ql.QLearner(
+            num_states = 10 * 10 * 10 * 3,
+            num_actions = 3,
+            dyna = 25)
 
+        best_final_value = -1000000
+        previous_final_value = -1000000
+        learn_iteration = 0
+        self.learn_loop(prices_all, sv, symbol)
+        converge_countdown = 10
+        while converge_countdown > 0 and learn_iteration < 200:
+            previous_final_value = self.current_value
+            self.learn_loop(prices_all, sv, symbol)
+            if self.current_value > sv:
+                if self.current_value > best_final_value:
+                    best_final_value = self.current_value
+                    converge_countdown = 10
+                else:
+                    converge_countdown = converge_countdown - 1
+            # if self.current_value - previous_final_value < 100:
+            #     converge_countdown = converge_countdown - 1
+            # else:
+            #     converge_countdown = 5
+            learn_iteration = learn_iteration + 1
+            print("Learning iteration: ", learn_iteration, "Convergence Countdown", converge_countdown)
+
+    def learn_loop(self, prices_all, sv, symbol):
         # for each day in training data
-            # compute current state (cumret + holding)
-            # compute reward for last action
-            # query learner with current stat and reward to get an action
-            # implement the action the learner returned (BUY, SELL, NOTHING) and update port value
+        # compute current state (cumret + holding)
+        # compute reward for last action
+        # query learner with current stat and reward to get an action
+        # implement the action the learner returned (BUY, SELL, NOTHING) and update port value
+        portvals = []
+        dr = []
 
         self.cash = sv
         self.current_value = self.cash
-        self.pos = 1 # cash
-
+        self.pos = 1  # cash
         first = True
+        penalty = 1.0
         for date in prices_all[14:].index:
-            print(date)
-            mom = prices_all.ix[date][momentum_label]
+            # print(date)
+            mom = prices_all.ix[date][2]
             vol = prices_all.ix[date][3]
             sma = prices_all.ix[date][4]
-            s = self.pos * 1000 + mom * 100 + vol * 10 + sma
+            s_prime = self.pos * 1000 + mom * 100 + vol * 10 + sma
             if first:
-                a = self.learner.querysetstate(s)
+                a = self.learner.querysetstate(s_prime)
                 first = False
             else:
-                a = self.learner.query(s, self.current_value)
+                # if (len(portvals) > 1):
+                #     dr.append(portvals[-1]/portvals[-2] - 1.0)
+                #     avg_daily_ret = ((len(dr) - 1) * avg_daily_ret + dr[-1]) / len(dr)
+                # else:
+                #     avg_daily_ret = 0.0
+                # # print(avg_daily_ret)
+                # a = self.learner.query(s, avg_daily_ret)
+                # r = sv/self.current_value - 1.0
+                a = self.learner.query(s_prime, self.current_value * penalty)
 
             price = prices_all.ix[date][symbol]
 
+            penalty = 1.0
             # trade
-            if a == 0:      # buy
+            if a == 0:  # buy
                 if self.pos == 0:
                     self.pos = 1
                     self.cash = self.cash - price * 100
-                    print("buy")
+                    # print("buy")
                 elif self.pos == 1:
                     self.pos = 2
                     self.cash = self.cash - price * 100
-                    print("buy")
-            elif a == 1:    # sell
+                    # print("buy")
+                else:
+                    pass
+                    # penalty = 0.8
+            elif a == 1:  # sell
                 if self.pos == 1:
                     self.pos = 0
                     self.cash = self.cash + price * 100
-                    print("sell")
+                    # print("sell")
                 elif self.pos == 2:
                     self.pos = 1
                     self.cash = self.cash + price * 100
-                    print("sell")
-            else:           # nothing
+                    # print("sell")
+                else:
+                    pass
+                    # penalty = 0.8
+            else:  # nothing
                 pass
 
             if self.pos == 0:
@@ -106,21 +149,25 @@ class StrategyLearner(object):
             else:
                 self.current_value = self.cash + price * 100
 
-            print(self.current_value)
+            portvals.append(self.current_value)
 
-        # example usage of the old backward compatible util function
-        # syms=[symbol]
-        # dates = pd.date_range(sd, ed)
-        # prices_all = ut.get_data(syms, dates)  # automatically adds SPY
-        # prices = prices_all[syms]  # only portfolio symbols
-        # prices_SPY = prices_all['SPY']  # only SPY, for comparison later
-        # if self.verbose: print prices
-        #
-        # # example use with new colname
-        # volume_all = ut.get_data(syms, dates, colname = "Volume")  # automatically adds SPY
-        # volume = volume_all[syms]  # only portfolio symbols
-        # volume_SPY = volume_all['SPY']  # only SPY, for comparison later
-        # if self.verbose: print volume
+
+        print(self.current_value)
+        return self.current_value
+
+            # example usage of the old backward compatible util function
+            # syms=[symbol]
+            # dates = pd.date_range(sd, ed)
+            # prices_all = ut.get_data(syms, dates)  # automatically adds SPY
+            # prices = prices_all[syms]  # only portfolio symbols
+            # prices_SPY = prices_all['SPY']  # only SPY, for comparison later
+            # if self.verbose: print prices
+            #
+            # # example use with new colname
+            # volume_all = ut.get_data(syms, dates, colname = "Volume")  # automatically adds SPY
+            # volume = volume_all[syms]  # only portfolio symbols
+            # volume_SPY = volume_all['SPY']  # only SPY, for comparison later
+            # if self.verbose: print volume
 
     # this method should use the existing policy and test it against new data
     def testPolicy(self, symbol = "IBM", \
@@ -135,10 +182,13 @@ class StrategyLearner(object):
         trades = prices_all[[symbol,]]  # only portfolio symbols
         trades_SPY = prices_all['SPY']  # only SPY, for comparison later
         trades.values[:,:] = 0 # set them all to nothing
-        trades.values[3,:] = 100 # add a BUY at the 4th date
-        trades.values[5,:] = -100 # add a SELL at the 6th date
-        trades.values[6,:] = -100 # add a SELL at the 7th date
-        trades.values[8,:] = -100 # add a SELL at the 9th date
+        # trades.values[3,:] = 100 # add a BUY at the 4th date
+        # trades.values[5,:] = -100 # add a SELL at the 6th date
+        # trades.values[6,:] = -100 # add a SELL at the 7th date
+        # trades.values[8,:] = -100 # add a SELL at the 9th date
+        for date in dates:
+            a = self.learner.query()
+
         if self.verbose: print type(trades) # it better be a DataFrame!
         if self.verbose: print trades
         if self.verbose: print prices_all
