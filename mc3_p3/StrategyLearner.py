@@ -51,11 +51,24 @@ class StrategyLearner(object):
         # prices_all[symbol + "_sma15"][15:] = self.discretize(symbol + "_sma15", prices_all[15:], 9)
         # print(prices_all[13:])
 
+        sma = pd.rolling_mean(prices_all[symbol], 20, 20)
+        prices_all['bb_normed'] = (prices_all[symbol] - sma)/(2 * pd.rolling_std(prices_all[symbol], 20, 20))
+        prices_all[19:] = self.discretize('bb_normed', prices_all[19:], 9)
+
+        sma15 = pd.rolling_mean(prices_all[symbol], 15, 15)
+        sma75 = pd.rolling_mean(prices_all[symbol], 75, 75)
+        prices_all['15div75sma'] = (sma15/sma75) - 1.0
+        prices_all[74:] = self.discretize('15div75sma', prices_all[74:], 9)
+        prices_all[symbol + '_normed'] = prices_all[symbol] / np.mean(prices_all[symbol]) - 1.0
+        prices_all[:] = self.discretize(symbol + '_normed', prices_all[:], 9)
+
+        if self.verbose: print(prices_all.head())
+
         self.learner = ql.QLearner(
             num_states = 10 * 10 * 10 * 3,
             num_actions = 3,
-            dyna = 25,
-            rar = 0.98)
+            # dyna = 25,
+            rar = 0.5)
 
         best_final_value = -1000000
         previous_final_value = -1000000
@@ -92,12 +105,13 @@ class StrategyLearner(object):
         self.pos = 1  # cash
         first = True
         penalty = 1.0
-        for date in prices_all[14:].index:
+        for date in prices_all[74:].index:
             # print(date)
-            mom = prices_all.ix[date][2]
-            vol = prices_all.ix[date][3]
-            sma = prices_all.ix[date][4]
-            s_prime = self.pos * 1000 + mom * 100 + vol * 10 + sma
+            # mom = prices_all.ix[date][2]
+            # vol = prices_all.ix[date][3]
+            # sma = prices_all.ix[date][4]
+            # s_prime = self.pos * 1000 + mom * 100 + vol * 10 + sma
+            s_prime = self.sprime(prices_all, date)
             if first:
                 a = self.learner.querysetstate(s_prime)
                 first = False
@@ -170,6 +184,17 @@ class StrategyLearner(object):
             # volume_SPY = volume_all['SPY']  # only SPY, for comparison later
             # if self.verbose: print volume
 
+    def sprime(self, prices_all, date):
+        mom = prices_all.ix[date][2]
+        vol = prices_all.ix[date][3]
+        sma = prices_all.ix[date][4]
+        bb = prices_all.ix[date][5]
+        x = prices_all.ix[date][6]
+        norm = prices_all.ix[date][7]
+        s_prime = self.pos * 1000 + bb * 100 + x * 10 + norm
+        return s_prime
+
+
     # this method should use the existing policy and test it against new data
     def testPolicy(self, symbol = "IBM", \
         sd=dt.datetime(2009,1,1), \
@@ -192,6 +217,22 @@ class StrategyLearner(object):
 
         prices_all[symbol + "_sma15"] = prices_all[symbol].rolling(15, 15).mean()
         prices_all[14:] = self.discretize(symbol + "_sma15", prices_all[14:], 9)
+
+
+        sma = pd.rolling_mean(prices_all[symbol], 20, 20)
+        prices_all['bb_normed'] = (prices_all[symbol] - sma)/(2 * pd.rolling_std(prices_all[symbol], 20, 20))
+        prices_all[19:] = self.discretize('bb_normed', prices_all[19:], 9)
+
+        sma15 = pd.rolling_mean(prices_all[symbol], 15, 15)
+        sma75 = pd.rolling_mean(prices_all[symbol], 75, 75)
+        prices_all['15div75sma'] = (sma15/sma75) - 1.0
+        prices_all[74:] = self.discretize('15div75sma', prices_all[74:], 9)
+        prices_all[symbol + '_normed'] = prices_all[symbol] / np.mean(prices_all[symbol]) - 1.0
+        prices_all[:] = self.discretize(symbol + '_normed', prices_all[:], 9)
+
+
+
+
         trades = prices_all[[symbol,]]  # only portfolio symbols
         trades_SPY = prices_all['SPY']  # only SPY, for comparison later
         trades.values[:,:] = 0 # set them all to nothing
@@ -204,11 +245,8 @@ class StrategyLearner(object):
         self.pos = 1  # cash
         first = True
         i = 0
-        for date in prices_all[14:].index:
-            mom = prices_all.ix[date][2]
-            vol = prices_all.ix[date][3]
-            sma = prices_all.ix[date][4]
-            s_prime = self.pos * 1000 + mom * 100 + vol * 10 + sma
+        for date in prices_all[74:].index:
+            s_prime = self.sprime(prices_all, date)
             if first:
                 a = self.learner.querysetstate(s_prime)
                 first = False
